@@ -1,5 +1,6 @@
 
-export const HOST = "http://localhost:3005"
+export const HOST = "https://messaging-app-gzy5.onrender.com"
+// export const HOST = "http://localhost:3005"
 
 const AUTH_ROUTE = `${HOST}/api/auth`;
 const MESSAGE_ROUTE = `${HOST}/api/message`;
