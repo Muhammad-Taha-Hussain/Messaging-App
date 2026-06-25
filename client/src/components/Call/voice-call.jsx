@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useStateProvider } from '@/context/state-context';
 
-const Container = dynamic(() => import('./container'), { ssr: false });
+const Container = dynamic(() => import('./Container'), { ssr: false });
 
 function VoiceCall() {
   const [{ voiceCall, socket, userInfo }] = useStateProvider();

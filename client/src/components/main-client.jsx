@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import ChatList from './Chatlist/chat-list';
-import Empty from './empty';
+import Empty from './Empty';
 import { onAuthStateChanged } from 'firebase/auth';
 import { firebaseAuth } from '@/utils/firebase-config';
 import { checkUser } from '@/api/auth.api';
