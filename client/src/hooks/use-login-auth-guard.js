@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useQueryClient } from '@tanstack/react-query';
@@ -14,14 +14,14 @@ export function useLoginAuthGuard() {
   const [, dispatch] = useStateProvider();
   const queryClient = useQueryClient();
   const [ready, setReady] = useState(false);
+  const isRedirectingRef = useRef(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(firebaseAuth, async (currentUser) => {
-      if (!currentUser?.email) {
-        clearAuthSessionCookie();
-        dispatch({ type: reducerCases.SET_NEW_USER, newUser: false });
-        dispatch({ type: reducerCases.SET_USER_INFO, userInfo: undefined });
-        setReady(true);
+    let cancelled = false;
+    let unsubscribe = () => {};
+
+    const handleAuthenticatedUser = async (currentUser) => {
+      if (!currentUser?.email || isRedirectingRef.current || cancelled) {
         return;
       }
 
@@ -43,6 +43,7 @@ export function useLoginAuthGuard() {
               status: '',
             },
           });
+          isRedirectingRef.current = true;
           router.replace('/onboarding');
           return;
         }
@@ -63,14 +64,51 @@ export function useLoginAuthGuard() {
             userInfo: verifiedUser,
           });
           setAuthSessionCookie(verifiedUser);
-          router.replace('/');
+          isRedirectingRef.current = true;
+          window.location.assign('/');
         }
       } catch {
-        setReady(true);
+        if (!cancelled) {
+          setReady(true);
+        }
       }
-    });
+    };
 
-    return unsubscribe;
+    const setupAuthListener = async () => {
+      await firebaseAuth.authStateReady();
+      if (cancelled) return;
+
+      const currentUser = firebaseAuth.currentUser;
+
+      if (!currentUser?.email) {
+        clearAuthSessionCookie();
+        dispatch({ type: reducerCases.SET_NEW_USER, newUser: false });
+        dispatch({ type: reducerCases.SET_USER_INFO, userInfo: undefined });
+        setReady(true);
+        return;
+      }
+
+      await handleAuthenticatedUser(currentUser);
+
+      unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
+        if (!user?.email) {
+          clearAuthSessionCookie();
+          dispatch({ type: reducerCases.SET_NEW_USER, newUser: false });
+          dispatch({ type: reducerCases.SET_USER_INFO, userInfo: undefined });
+          setReady(true);
+          return;
+        }
+
+        handleAuthenticatedUser(user);
+      });
+    };
+
+    setupAuthListener();
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, [dispatch, queryClient, router]);
 
   return ready;

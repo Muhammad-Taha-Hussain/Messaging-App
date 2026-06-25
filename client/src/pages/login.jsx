@@ -89,7 +89,7 @@ function Login() {
             profileImage: existingProfileImage,
             status,
           });
-          router.replace('/');
+          window.location.assign('/');
         }
       }
     } catch (error) {

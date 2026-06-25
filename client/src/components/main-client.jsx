@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ChatList from './Chatlist/chat-list';
 import Empty from './Empty';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -22,7 +22,7 @@ import IncomingVideoCall from './common/incoming-video-call';
 import { clearAuthSessionCookie, setAuthSessionCookie } from '@/lib/auth-session';
 import { io } from 'socket.io-client';
 
-function MainClient() {
+function MainClient({ initialUserInfo }) {
   const router = useRouter();
   const [
     {
@@ -38,8 +38,15 @@ function MainClient() {
   ] = useStateProvider();
   const socket = useRef();
   const queryClient = useQueryClient();
-  const [authReady, setAuthReady] = useState(Boolean(userInfo?.id));
+  const userInfoRef = useRef(userInfo);
+  const [authReady, setAuthReady] = useState(
+    Boolean(initialUserInfo?.id ?? userInfo?.id)
+  );
   const { data: messages } = useMessages(userInfo?.id, currentChatUser?.id);
+
+  useEffect(() => {
+    userInfoRef.current = userInfo;
+  }, [userInfo]);
 
   useEffect(() => {
     if (userInfo?.id && userInfo?.email) {
@@ -47,9 +54,9 @@ function MainClient() {
     }
   }, [userInfo]);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(firebaseAuth, async (currentUser) => {
-      if (!currentUser) {
+  const verifyFirebaseUser = useCallback(
+    async (currentUser) => {
+      if (!currentUser?.email) {
         clearAuthSessionCookie();
         dispatch({ type: reducerCases.SET_NEW_USER, newUser: false });
         dispatch({ type: reducerCases.SET_USER_INFO, userInfo: undefined });
@@ -58,52 +65,77 @@ function MainClient() {
         return;
       }
 
-      if (currentUser.email && !userInfo?.id) {
-        try {
-          const data = await queryClient.fetchQuery({
-            queryKey: queryKeys.auth.checkUser(currentUser.email),
-            queryFn: () => checkUser(currentUser.email),
-            staleTime: 5 * 60 * 1000,
-          });
-
-          if (!data.status) {
-            setAuthReady(false);
-            dispatch({ type: reducerCases.SET_NEW_USER, newUser: true });
-            dispatch({
-              type: reducerCases.SET_USER_INFO,
-              userInfo: {
-                name: currentUser.displayName ?? '',
-                email: currentUser.email,
-                profileImage: currentUser.photoURL ?? '/default_avatar.png',
-                status: '',
-              },
-            });
-            router.replace('/onboarding');
-            return;
-          }
-
-          if (data.data) {
-            const { id, email, name, profilePicture: profileImage, status } = data.data;
-            const verifiedUser = { id, name, email, profileImage, status };
-            dispatch({
-              type: reducerCases.SET_USER_INFO,
-              userInfo: verifiedUser,
-            });
-            setAuthSessionCookie(verifiedUser);
-          }
-        } catch (error) {
-          console.error('Failed to verify user session:', error);
-          setAuthReady(false);
-          router.replace('/login');
-          return;
-        }
+      if (userInfoRef.current?.id) {
+        setAuthReady(true);
+        return;
       }
 
-      setAuthReady(true);
-    });
+      try {
+        const data = await queryClient.fetchQuery({
+          queryKey: queryKeys.auth.checkUser(currentUser.email),
+          queryFn: () => checkUser(currentUser.email),
+          staleTime: 5 * 60 * 1000,
+        });
 
-    return unsubscribe;
-  }, [dispatch, queryClient, router, userInfo?.id]);
+        if (!data.status) {
+          setAuthReady(false);
+          dispatch({ type: reducerCases.SET_NEW_USER, newUser: true });
+          dispatch({
+            type: reducerCases.SET_USER_INFO,
+            userInfo: {
+              name: currentUser.displayName ?? '',
+              email: currentUser.email,
+              profileImage: currentUser.photoURL ?? '/default_avatar.png',
+              status: '',
+            },
+          });
+          router.replace('/onboarding');
+          return;
+        }
+
+        if (data.data) {
+          const { id, email, name, profilePicture: profileImage, status } = data.data;
+          const verifiedUser = { id, name, email, profileImage, status };
+          dispatch({
+            type: reducerCases.SET_USER_INFO,
+            userInfo: verifiedUser,
+          });
+          setAuthSessionCookie(verifiedUser);
+        }
+
+        setAuthReady(true);
+      } catch (error) {
+        console.error('Failed to verify user session:', error);
+        setAuthReady(false);
+        router.replace('/login');
+      }
+    },
+    [dispatch, queryClient, router]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    let unsubscribe = () => {};
+
+    const setupAuthListener = async () => {
+      await firebaseAuth.authStateReady();
+      if (cancelled) return;
+
+      await verifyFirebaseUser(firebaseAuth.currentUser);
+      if (cancelled) return;
+
+      unsubscribe = onAuthStateChanged(firebaseAuth, (currentUser) => {
+        verifyFirebaseUser(currentUser);
+      });
+    };
+
+    setupAuthListener();
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [verifyFirebaseUser]);
 
   useEffect(() => {
     if (!userInfo) return undefined;

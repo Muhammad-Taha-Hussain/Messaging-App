@@ -17,7 +17,7 @@ export default function HomePageClient({ dehydratedState, initialUserInfo }) {
         reducer={reducer}
         stateOverrides={stateOverrides}
       >
-        <MainClient />
+        <MainClient initialUserInfo={initialUserInfo} />
       </StateProvider>
     </HydrationBoundary>
   );
