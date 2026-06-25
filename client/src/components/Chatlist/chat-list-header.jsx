@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Avatar from '../common/avatar';
+import Avatar from '../common/Avatar';
 import { useStateProvider } from '@/context/state-context';
 import { BsFillChatLeftTextFill, BsThreeDotsVertical } from 'react-icons/bs';
 import ContextMenu from '../common/context-menu';

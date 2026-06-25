@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Avatar from '@/components/common/avatar';
+import Avatar from '@/components/common/Avatar';
 import { useStateProvider } from '@/context/state-context';
 import { MdCall } from 'react-icons/md';
 import { IoVideocam } from 'react-icons/io5';

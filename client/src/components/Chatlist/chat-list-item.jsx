@@ -1,5 +1,5 @@
 import React from 'react';
-import Avatar from '../common/avatar';
+import Avatar from '../common/Avatar';
 import { useStateProvider } from '@/context/state-context';
 import { reducerCases } from '@/context/constants';
 import { calculateTime } from '@/utils/calculate-time';

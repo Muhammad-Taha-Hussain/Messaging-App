@@ -3,7 +3,7 @@ import { useStateProvider } from '@/context/state-context';
 import { FaPlay, FaStop } from 'react-icons/fa';
 import WaveSurfer from 'wavesurfer.js';
 import { resolveMediaUrl } from '@/utils/resolve-media-url';
-import Avatar from '../common/avatar';
+import Avatar from '../common/Avatar';
 import { calculateTime } from '@/utils/calculate-time';
 import MessageStatus from '../common/message-status';
 

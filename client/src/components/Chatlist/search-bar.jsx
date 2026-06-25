@@ -2,7 +2,6 @@ import { reducerCases } from '@/context/constants';
 import { useStateProvider } from '@/context/state-context';
 import React from 'react';
 import { BiSearchAlt2 } from 'react-icons/bi';
-import { BsFilter } from 'react-icons/bs';
 
 function SearchBar() {
   const [{ contactsSearch }, dispatch] = useStateProvider();

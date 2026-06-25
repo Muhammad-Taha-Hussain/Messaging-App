@@ -1,5 +1,5 @@
-import Avatar from '@/components/common/avatar';
-import Input from '@/components/common/input';
+import Avatar from '@/components/common/Avatar';
+import Input from '@/components/common/Input';
 import { useStateProvider } from '@/context/state-context';
 import { useOnboardUser, useEditOnboardUser } from '@/hooks/use-auth-api';
 import Image from 'next/image';
