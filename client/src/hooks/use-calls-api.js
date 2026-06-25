@@ -6,7 +6,7 @@ export function useCallTokens(userId, enabled = true) {
   return useQuery({
     queryKey: queryKeys.calls.tokens(userId),
     queryFn: () => fetchCallTokens(userId),
-    enabled: !!userId,
+    enabled: Boolean(userId) && enabled,
     staleTime: 0,
     gcTime: 0,
   });

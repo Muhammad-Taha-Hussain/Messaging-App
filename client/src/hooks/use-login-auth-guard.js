@@ -7,27 +7,20 @@ import { queryKeys } from '@/api/query-keys';
 import { reducerCases } from '@/context/constants';
 import { useStateProvider } from '@/context/state-context';
 import { firebaseAuth } from '@/utils/firebase-config';
-import { setAuthSessionCookie } from '@/lib/auth-session';
+import { clearAuthSessionCookie, setAuthSessionCookie } from '@/lib/auth-session';
 
 export function useLoginAuthGuard() {
   const router = useRouter();
-  const [{ userInfo, newUser }, dispatch] = useStateProvider();
+  const [, dispatch] = useStateProvider();
   const queryClient = useQueryClient();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (userInfo?.id) {
-      router.replace('/');
-      return undefined;
-    }
-
-    if (newUser && userInfo?.email) {
-      router.replace('/onboarding');
-      return undefined;
-    }
-
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (currentUser) => {
       if (!currentUser?.email) {
+        clearAuthSessionCookie();
+        dispatch({ type: reducerCases.SET_NEW_USER, newUser: false });
+        dispatch({ type: reducerCases.SET_USER_INFO, userInfo: undefined });
         setReady(true);
         return;
       }
@@ -78,7 +71,7 @@ export function useLoginAuthGuard() {
     });
 
     return unsubscribe;
-  }, [dispatch, newUser, queryClient, router, userInfo]);
+  }, [dispatch, queryClient, router]);
 
   return ready;
 }

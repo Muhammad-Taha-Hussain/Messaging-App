@@ -5,6 +5,9 @@ import React from 'react';
 
 function IncomingCall() {
   const [{ incomingVoiceCall, socket }, dispatch] = useStateProvider();
+  if (!incomingVoiceCall) {
+    return null;
+  }
 
   const acceptCall = () => {
     dispatch({
@@ -19,7 +22,7 @@ function IncomingCall() {
   };
   
   const rejectCall = () => {
-    socket.current.emit('reject-voice-call', { from: incomingVoiceCall.id });
+    socket?.current?.emit('reject-voice-call', { from: incomingVoiceCall.id });
     dispatch({ type: reducerCases.END_CALL });
   };
 
@@ -37,16 +40,16 @@ function IncomingCall() {
       <div>
         <div>
           {incomingVoiceCall.name}
-          <div className="text-xs">Incoming Video Call</div>
+          <div className="text-xs">Incoming Voice Call</div>
           <div className="flex gap-2 mt-2">
             <button
-              className="bg-red-500 p-1 px-3 text-sm founded-full"
+              className="bg-red-500 p-1 px-3 text-sm rounded-full"
               onClick={rejectCall}
             >
               Reject
             </button>
             <button
-              className="bg-green-500 p-1 px-3 text-sm founded-full"
+              className="bg-green-500 p-1 px-3 text-sm rounded-full"
               onClick={acceptCall}
             >
               Accept

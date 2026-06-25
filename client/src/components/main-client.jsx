@@ -19,7 +19,7 @@ import VideoCall from './Call/video-call';
 import VoiceCall from './Call/voice-call';
 import IncomingCall from './common/incoming-call';
 import IncomingVideoCall from './common/incoming-video-call';
-import { setAuthSessionCookie } from '@/lib/auth-session';
+import { clearAuthSessionCookie, setAuthSessionCookie } from '@/lib/auth-session';
 import { io } from 'socket.io-client';
 
 function MainClient() {
@@ -50,6 +50,9 @@ function MainClient() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (currentUser) => {
       if (!currentUser) {
+        clearAuthSessionCookie();
+        dispatch({ type: reducerCases.SET_NEW_USER, newUser: false });
+        dispatch({ type: reducerCases.SET_USER_INFO, userInfo: undefined });
         setAuthReady(false);
         router.replace('/login');
         return;
