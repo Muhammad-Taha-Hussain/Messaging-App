@@ -59,15 +59,15 @@ function Container({ data }) {
           "zego-express-engine-webrtc"
         );
   
-        // ✅ INIT
+        // ================= INIT =================
         zg = new ZegoExpressEngine(
-          Number(process.env.NEXT_PUBLIC_ZEGO_APP_ID),
-          "wss://webliveroom1539784341-api.coolzcloud.com/ws"
+          Number(process.env.NEXT_PUBLIC_ZEGO_APP_ID)
+          // ❌ DO NOT PASS websocket URL manually
         );
   
         zgRef.current = zg;
   
-        // ✅ LOGIN
+        // ================= LOGIN =================
         await zg.loginRoom(
           data.roomId.toString(),
           token,
@@ -79,19 +79,21 @@ function Container({ data }) {
   
         if (!mounted) return;
   
-        // ✅ CREATE STREAM (DO NOT WRAP IT)
-        localStream = await zg.createStream({
+        // ================= CREATE STREAM =================
+        const zegoStream = await zg.createStream({
           camera: {
             audio: true,
             video: data.callType === "video",
           },
         });
   
-        if (!localStream) throw new Error("No local stream");
+        if (!zegoStream) throw new Error("Stream creation failed");
   
+        // 🔥 IMPORTANT FIX: always convert to real MediaStream
+        localStream = new MediaStream(zegoStream.getTracks());
         localStreamRef.current = localStream;
   
-        // ✅ LOCAL PREVIEW (SAFE)
+        // ================= LOCAL PREVIEW =================
         const localContainer = document.getElementById("local-audio");
   
         if (localContainer) {
@@ -104,29 +106,32 @@ function Container({ data }) {
           el.autoplay = true;
           el.muted = true;
           el.playsInline = true;
-  
           el.srcObject = localStream;
   
           localContainer.appendChild(el);
         }
   
-        // ✅ PUBLISH (IMPORTANT: PASS RAW STREAM)
+        // ================= PUBLISH STREAM =================
         const streamId = `${userInfo.id}_${Date.now()}`;
-  
         publishedStreamRef.current = streamId;
   
         await zg.startPublishingStream(streamId, localStream);
   
-        // ✅ REMOTE STREAM
+        // ================= REMOTE STREAM =================
         zg.on("roomStreamUpdate", async (_, type, list) => {
           if (!mounted) return;
   
           const container = document.getElementById("remote-video");
+          if (!container) return;
   
           for (const item of list || []) {
             const streamID = item.streamID;
+            if (!streamID) continue;
   
             if (type === "ADD") {
+              // avoid duplicate elements
+              if (document.getElementById(streamID)) return;
+  
               const el = document.createElement(
                 data.callType === "video" ? "video" : "audio"
               );
@@ -135,13 +140,13 @@ function Container({ data }) {
               el.autoplay = true;
               el.playsInline = true;
   
-              container?.appendChild(el);
+              container.appendChild(el);
   
               try {
                 const remoteStream = await zg.startPlayingStream(streamID);
                 el.srcObject = remoteStream;
-              } catch (e) {
-                console.error("play error", e);
+              } catch (err) {
+                console.error("Remote play error:", err);
               }
             }
   
@@ -150,7 +155,6 @@ function Container({ data }) {
             }
           }
         });
-  
       } catch (err) {
         console.error("Zego error:", err);
       }
@@ -158,29 +162,26 @@ function Container({ data }) {
   
     startCall();
   
-    // ✅ CLEANUP (IMPORTANT FIX FOR getStats BUG)
+    // ================= CLEANUP (FIXED getStats issue) =================
     return () => {
       mounted = false;
   
       try {
-        // STOP FIRST (very important)
         if (publishedStreamRef.current && zgRef.current) {
           zgRef.current.stopPublishingStream(publishedStreamRef.current);
         }
   
-        // THEN DESTROY STREAM
         if (localStreamRef.current && zgRef.current) {
           try {
             zgRef.current.destroyStream(localStreamRef.current);
           } catch (e) {}
         }
   
-        // FINALLY LEAVE ROOM
         if (zgRef.current) {
           zgRef.current.logoutRoom(data.roomId.toString());
         }
       } catch (e) {
-        console.error("cleanup error", e);
+        console.error("Cleanup error:", e);
       } finally {
         zgRef.current = null;
         localStreamRef.current = null;
