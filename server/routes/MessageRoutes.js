@@ -4,8 +4,8 @@ import multer from "multer";
 
 const router = Router();
 
-const upload = multer({ dest: "uploads/recordings" })
-const uploadImage = multer({ dest: "uploads/images" })
+const upload = multer({ storage: multer.memoryStorage() })
+const uploadImage = multer({ storage: multer.memoryStorage() })
 
 router.post('/add-message', addMessage);
 

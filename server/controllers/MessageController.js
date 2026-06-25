@@ -1,6 +1,14 @@
-import { log } from "console";
 import getPrismaInstance from "../utils/PrismaClient.js";
-import { renameSync } from "fs";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import s3 from "../utils/cloudflare-storage-setup.js";
+
+const toPublicMediaUrl = (keyOrUrl) => {
+  if (!keyOrUrl) return keyOrUrl;
+  if (typeof keyOrUrl === "string" && /^https?:\/\//i.test(keyOrUrl)) return keyOrUrl;
+  const base = process.env.R2_PUBLIC_BASE_URL;
+  if (!base) return keyOrUrl;
+  return `${base.replace(/\/$/, "")}/${String(keyOrUrl).replace(/^\//, "")}`;
+};
 
 export const addMessage = async (req, res) => {
   try {
@@ -84,15 +92,23 @@ export const addImageMessage = async (req, res, next) => {
   try {
     if (req.file) {
       const date = Date.now();
-      let fileName = "uploads/images/" + date + req.file.originalname;
-      renameSync(req.file.path, fileName);
       const prisma = getPrismaInstance();
       // const getUser = onlineUsers.get(to);
       const { from, to } = req.query;
       if (from && to) {
+        const key = `images/${date}-${req.file.originalname}`;
+        await s3.send(
+          new PutObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME,
+            Key: key,
+            Body: req.file.buffer,
+            ContentType: req.file.mimetype,
+          })
+        );
+
         const message = await prisma.Messages.create({
           data: {
-            message: fileName,
+            message: toPublicMediaUrl(key),
             type: "image",
             sender: { connect: { id: parseInt(from) } },
             receiver: { connect: { id: parseInt(to) } },
@@ -114,15 +130,23 @@ export const addAudioMessage = async (req, res, next) => {
   try {
     if (req.file) {
       const date = Date.now();
-      let fileName = "uploads/recordings/" + date + req.file.originalname;
-      renameSync(req.file.path, fileName);
       const prisma = getPrismaInstance();
       // const getUser = onlineUsers.get(to);
       const { from, to } = req.query;
       if (from && to) {
+        const key = `recordings/${date}-${req.file.originalname}`;
+        await s3.send(
+          new PutObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME,
+            Key: key,
+            Body: req.file.buffer,
+            ContentType: req.file.mimetype,
+          })
+        );
+
         const message = await prisma.Messages.create({
           data: {
-            message: fileName,
+            message: toPublicMediaUrl(key),
             type: "audio",
             sender: { connect: { id: parseInt(from) } },
             receiver: { connect: { id: parseInt(to) } },

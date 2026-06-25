@@ -1,12 +1,10 @@
+import "dotenv/config";
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
-
 import authRoutes from "./routes/AuthRoutes.js";
 import messageRoutes from "./routes/MessageRoutes.js";
+import uploadRoutes from "./routes/upload.js"
 import { Server } from "socket.io";
-
-dotenv.config();
 
 const app = express();
 
@@ -20,8 +18,16 @@ app.use("/api/auth", authRoutes);
 
 app.use("/api/message", messageRoutes);
 
-app.get("/", (req, res) => {
-  res.send("Hello");
+app.use("/api/upload", uploadRoutes);
+
+
+app.get("/health-status", (req, res) => {
+  try {
+
+    res.send("Excellent");
+  } catch (error) {
+    next(error)
+  }
 });
 
 const port = process.env.PORT || 3005;
@@ -32,8 +38,8 @@ const server = app.listen(process.env.PORT, () => {
 
 const io = new Server(server, {
   cors: {
-    origin: [process.env.FRONTEND_URL, "http://localhost:3000"],
-    methods: ["GET", "POST"],
+    origin: ['https://2a50-157-10-227-35.ngrok-free.app', process.env.FRONTEND_URL, "http://localhost:3000"],
+    methods: ["GET", "POST", "PATCH"],
   },
 });
 
@@ -44,7 +50,6 @@ io.on("connection", (socket) => {
 
   socket.on("add-user", (userId) => {
     console.log("Adding user:", userId, "with socket:", socket.id);
-    //   onlineUsers.set(userId.toString(), socket.id); // normalize to string
     onlineUsers.set(userId, socket.id);
     socket.broadcast.emit("online-users", {
       onlineUsers: Array.from(onlineUsers.keys())

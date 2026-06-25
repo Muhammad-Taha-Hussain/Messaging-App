@@ -1,0 +1,58 @@
+---
+description: Frontend standards for the WhatsApp clone (Next.js + React)
+globs:
+  - client/src/**/*.{js,jsx}
+alwaysApply: true
+---
+
+# Frontend + Next.js Project Rule
+
+Follow these standards for every change under `client/src`.
+
+## Architecture and state
+- Keep reducers pure: no `console.log`, no network calls, no subscriptions, and no non-deterministic behavior.
+- Use `StateReducers.js` for state transitions only; keep API, Firebase, and socket logic inside components/hooks.
+- Add new reducer keys to `initialState` to avoid undefined access and hidden UI bugs.
+- Prefer explicit action payload names (`messages`, `userInfo`, `onlineUsers`) and avoid overloaded action shapes.
+
+## React/Next.js best practices
+- Register listeners/subscriptions (`onAuthStateChanged`, `socket.on`, DOM events) inside `useEffect` and always clean them up.
+- Never place `onAuthStateChanged(...)` directly in render body; wrap it in `useEffect` and return unsubscribe.
+- Avoid unstable effect dependencies like `socket.current` directly in dependency arrays; depend on stable values and manage refs inside effect.
+- Use `router.replace()` for auth redirects where back-navigation should be prevented.
+- Keep page components PascalCase (`Home`, `Login`, `Onboarding`) and exports consistent.
+- Remove redundant wrappers/fragments when they add no structure.
+
+## Code quality rules (lint-focused)
+- No debug logging in committed code (`console.log`, temporary commented logs, noisy traces).
+- No unused imports, states, refs, dispatch values, or local variables.
+- No dead code blocks left commented out unless intentionally documented with a clear reason.
+- Keep className strings valid in all branches (avoid partial class fallbacks that break layout).
+- Use early returns in async flows to reduce nested conditionals and make control flow clear.
+- Do not use array index as React key; use stable message/entity ids.
+- Prefer kebab-case file names for new frontend files; migrate legacy names gradually.
+
+## ESLint baseline for this repo
+- Use `.eslintrc.json` (Next 13 compatible), extending `next/core-web-vitals` and `prettier`.
+- Keep `no-console` as warning with only `console.warn` and `console.error` allowed.
+- Keep `react/no-array-index-key` enabled as error.
+- Use kebab-case for all new file names. Legacy PascalCase files must be renamed only in small, safe batches with import updates and lint verification.
+- Apply strict TypeScript-only rules via overrides for `*.ts` and `*.tsx` (`no-explicit-any`, strict unused vars).
+
+## API and async safety
+- Guard async calls with required identifiers (`userInfo?.id`, `currentChatUser?.id`) before requesting.
+- Handle request failures with `try/catch` in user-triggered or effect-driven API calls.
+- Prevent duplicate listener registration by scoping setup/cleanup to the same effect.
+
+## Existing project lint/code smells to avoid repeating
+- Repeated debug logging exists in multiple files (`Main`, `pages`, chat/call/common components). New changes must not add more.
+- Prior lifecycle bug pattern: auth listener initialized outside `useEffect`. Keep all future auth listeners effect-scoped.
+- Prior socket pattern issue: event handlers attached without reliable cleanup. Always disconnect/off in cleanup.
+- Prior naming/style inconsistency: lowercase page component names and mixed formatting. Keep naming/style consistent.
+- Prior state shape drift: reducer writes keys not present in `initialState`. Update state shape explicitly when adding keys.
+
+## Preferred workflow for this repo
+1. Implement with minimal surface-area change.
+2. Remove redundant code while editing touched files.
+3. Run `npm run lint` in `client` (after ESLint is configured) and resolve issues before finalizing.
+4. Keep changes focused: avoid unrelated refactors in the same pass.

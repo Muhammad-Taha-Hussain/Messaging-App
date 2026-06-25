@@ -1,10 +1,10 @@
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { FaCamera } from "react-icons/fa";
-import ContextMenu from "./ContextMenu";
-import PhotoPicker from "./PhotoPicker";
-import PhotoLibrary from "./PhotoLibrary";
-import CapturePhoto from "./CapturePhoto";
+import ContextMenu from "./context-menu";
+import PhotoPicker from "./photo-picker";
+import PhotoLibrary from "./photo-library";
+import CapturePhoto from "./capture-photo";
 
 function Avatar({ type, image, setImage }) {
   const [hover, setHover] = useState(false);
@@ -34,7 +34,6 @@ function Avatar({ type, image, setImage }) {
     setContextMenuCoordinates({ x: e.pageX, y: e.pageY });
     setIsContextMenuVisible(true);
   };
-  console.log(setContextMenuCoordinates);
 
   const contextMenuOptions = [
     {

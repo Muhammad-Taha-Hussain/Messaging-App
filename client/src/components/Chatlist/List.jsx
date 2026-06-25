@@ -1,47 +1,28 @@
-import { reducerCases } from "@/context/constants";
-import { useStateProvider } from "@/context/StateContext";
-import { GET_INITIAL_CONTACTS_ROUTE } from "@/utils/ApiRoutes";
-import axios from "axios";
-import React, { useEffect } from "react";
-import ChatLIstItem from "./ChatLIstItem";
+import { reducerCases } from '@/context/constants';
+import { useStateProvider } from '@/context/state-context';
+import { useInitialContacts } from '@/hooks/use-contacts-api';
+import React, { useEffect } from 'react';
+import ChatListItem from './chat-list-item';
 
 function List() {
   const [{ userInfo, userContacts, filteredContacts }, dispatch] = useStateProvider();
+  const { data } = useInitialContacts(userInfo?.id);
 
   useEffect(() => {
-    const getContacts = async () => {
-      try {
-        const {
-          data: { users, onlineUsers },
-        } = await axios.get(`${GET_INITIAL_CONTACTS_ROUTE}/${userInfo.id}`);
-
-        console.log("ok hello", users, onlineUsers);
-
-        dispatch({ type: reducerCases.SET_USER_CONTACTS, userContacts: users });
-        dispatch({ type: reducerCases.SET_ONLINE_USERS, onlineUsers });
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    if (userInfo?.id) {
-      getContacts();
+    if (data) {
+      dispatch({ type: reducerCases.SET_USER_CONTACTS, userContacts: data.users });
+      dispatch({ type: reducerCases.SET_ONLINE_USERS, onlineUsers: data.onlineUsers });
     }
-  }, [userInfo]);
-
-  console.log("userContacts", userContacts);
+  }, [data, dispatch]);
 
   return (
-    <div className="bg-search-input-container-background flex-auto overflow-auto max-h-full cursor-pointer custom-scrollbar">
-      {
-        filteredContacts && filteredContacts.length > 0 ? 
-          filteredContacts.map((contact) => (
-          <ChatLIstItem data={contact} key={contact.id} />
-           )) :  userContacts.map((contact) => (
-            <ChatLIstItem data={contact} key={contact.id} />
-             ))
-      }
-      
+    <div className="bg-search-input-container-background flex-auto overflow-auto max-h-full custom-scrollbar">
+      {(filteredContacts && filteredContacts.length > 0
+        ? filteredContacts
+        : userContacts
+      ).map((contact) => (
+        <ChatListItem data={contact} key={contact.id} />
+      ))}
     </div>
   );
 }

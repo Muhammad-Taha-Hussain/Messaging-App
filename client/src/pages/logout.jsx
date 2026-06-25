@@ -1,27 +1,28 @@
-import { useStateProvider } from "@/context/StateContext";
-import { firebaseAuth } from "@/utils/FirebaseConfig";
-import { signOut } from "firebase/auth";
-import { useRouter } from "next/router";
-import React, { useEffect } from "react";
-import { reducerCases } from "@/context/constants";
+import { useRouter } from 'next/router';
+import React, { useEffect } from 'react';
+import { signOutUser } from '@/lib/sign-out';
 
-
-function logout() {
-  const [{socket, userInfo}, dispatch] = useStateProvider();
+function Logout() {
   const router = useRouter();
 
   useEffect(() => {
-    console.log(socket.current);
-    
-    // if (socket?.current) {
-      socket.current.emit("signout", userInfo?.id);
-    // }
-    dispatch({ type: reducerCases.SET_USER_INFO, userInfo: undefined });
-    signOut(firebaseAuth);
-    router.push("/login");
-  }, [socket]);
+    let active = true;
 
-  return <div className="bg-conversation-panel-background">logout</div>;
+    const runLogout = async () => {
+      await signOutUser();
+      if (active) {
+        router.replace('/login');
+      }
+    };
+
+    runLogout();
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
+
+  return null;
 }
 
-export default logout;
+export default Logout;

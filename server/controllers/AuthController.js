@@ -56,6 +56,42 @@ export const onBoardUser = async (req, res, next) => {
   }
 };
 
+export const editOnboardUser = async (req, res, next) => {
+  try {
+    const { name, email, image: profilePicture, about } = req.body;
+    const id = Number(req.params.id);
+
+    if (!id) {
+      return res.status(400).json({
+        msg: "User id is required",
+        status: false,
+      });
+    }
+
+    const prisma = getPrismaInstance();
+
+    const user = await prisma.user.update({
+      where: {
+        id,
+      },
+      data: {
+        ...(name && { name }),
+        ...(email && { email }),
+        ...(profilePicture && { profilePicture }),
+        ...(about && { about }),
+      },
+    });
+
+    return res.json({
+      msg: "User updated successfully",
+      status: true,
+      user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getAllUsers = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
@@ -105,8 +141,8 @@ export const updateUser = async (req, res, next) => {
 
 export const generateToken = (req, res, next) => {
   try {
-    const appId = parseInt(process.env.NEXT_PUBLIC_ZEGO_APP_ID);
-    const serverSecret = process.env.NEXT_PUBLIC_ZEGO_SERVER_ID;
+    const appId = Number(process.env.ZEGO_APP_ID);
+    const serverSecret = process.env.ZEGO_SERVER_SECRET;
     const userId = req.params.userId;
     const effectiveTime = 3600;
     const payload = "";

@@ -1,11 +1,13 @@
-import "@/styles/globals.css";
-import { StateProvider } from "@/context/StateContext";
-import Head from "next/head";
-import reducer, { initialState } from "@/context/StateReducers";
+import '@/styles/globals.css';
+import '@/config/env'; // Load environment variables
+import { StateProvider } from '@/context/state-context';
+import { QueryProvider } from '@/providers/query-provider';
+import Head from 'next/head';
+import reducer, { initialState } from '@/context/state-reducers';
 
 export default function App({ Component, pageProps }) {
   return (
-    <>
+    <QueryProvider>
       <StateProvider initialState={initialState} reducer={reducer}>
         <Head>
           <title>Whatsapp</title>
@@ -13,6 +15,6 @@ export default function App({ Component, pageProps }) {
         </Head>
         <Component {...pageProps} />
       </StateProvider>
-    </>
+    </QueryProvider>
   );
 }
