@@ -8,6 +8,7 @@ import { reducerCases } from '@/context/constants';
 import { useStateProvider } from '@/context/state-context';
 import { firebaseAuth } from '@/utils/firebase-config';
 import { clearAuthSessionCookie, setAuthSessionCookie } from '@/lib/auth-session';
+import { waitForFirebaseAuth } from '@/lib/wait-for-firebase-auth';
 
 export function useLoginAuthGuard() {
   const router = useRouter();
@@ -75,10 +76,8 @@ export function useLoginAuthGuard() {
     };
 
     const setupAuthListener = async () => {
-      await firebaseAuth.authStateReady();
+      const currentUser = await waitForFirebaseAuth(firebaseAuth);
       if (cancelled) return;
-
-      const currentUser = firebaseAuth.currentUser;
 
       if (!currentUser?.email) {
         clearAuthSessionCookie();

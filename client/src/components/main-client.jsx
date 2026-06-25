@@ -20,6 +20,7 @@ import VoiceCall from './Call/voice-call';
 import IncomingCall from './common/incoming-call';
 import IncomingVideoCall from './common/incoming-video-call';
 import { clearAuthSessionCookie, setAuthSessionCookie } from '@/lib/auth-session';
+import { waitForFirebaseAuth } from '@/lib/wait-for-firebase-auth';
 import { io } from 'socket.io-client';
 
 function MainClient({ initialUserInfo }) {
@@ -118,10 +119,10 @@ function MainClient({ initialUserInfo }) {
     let unsubscribe = () => {};
 
     const setupAuthListener = async () => {
-      await firebaseAuth.authStateReady();
+      const initialUser = await waitForFirebaseAuth(firebaseAuth);
       if (cancelled) return;
 
-      await verifyFirebaseUser(firebaseAuth.currentUser);
+      await verifyFirebaseUser(initialUser);
       if (cancelled) return;
 
       unsubscribe = onAuthStateChanged(firebaseAuth, (currentUser) => {
