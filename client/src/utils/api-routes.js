@@ -1,6 +1,6 @@
 
 // export const HOST = process.env.NEXT_PUBLIC_API_BASE_URL;
-export const HOST = process.env.NEXT_PUBLIC_APP_URL;
+export const HOST = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const AUTH_ROUTE = `${HOST}/api/auth`;
 const MESSAGE_ROUTE = `${HOST}/api/message`;
